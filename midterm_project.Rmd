@@ -20,20 +20,19 @@ library(gridExtra)
 # problem 1 - Data
 
 ```{r}
-water_wheel_data = read_excel("water_wheel.xlsx", skip = 8) 
-water_wheel_data = janitor::clean_names(water_wheel_data)
-water_wheel_data = mutate(water_wheel_data, 
-                                sex = factor(sex, levels = c(0,1), 
-                                labels = c("female", "male"))) %>%
+data = read_excel("data_set.xlsx", skip = 8) 
+data = janitor::clean_names(data)
+data = mutate(data, sex = factor(sex, levels = c(0,1), 
+                                 labels = c("female", "male"))) %>%
                    mutate(eop_size_mm = replace(eop_size_mm, is.na(eop_size_mm), 0),
                           eop_shape = factor(eop_shape))
   
 
 
-water_wheel_data_1 = water_wheel_data %>%
+data_1 = data %>%
   group_by(sex) %>%
   ggplot(aes(age, fill = sex)) + geom_histogram() 
-water_wheel_data_1
+data_1
 
 
 ```
@@ -41,7 +40,7 @@ Description of Data Cleaning Process: I changed the variables' names to lower-ca
 
 Indentification of Key Variables: In the resulting dataset, "sex", "age", and "FHP size" are three key variables. By categoring male and female into different groups, researchers can see how sex relates to exostosis. Also, enthesophyte size might vary by age, which can be checked by detecting ages. Also, "FHP size" is a key because it's the main factor we focus on.
 
-Declare of Distribution: There are `r nrows(water_wheel_data)` participants. By looking at the hitogram I ploted, we can see that the distribution of ages are very similar among males and females. The only difference is that the number of females among all ages is greater than the number of males.
+Declare of Distribution: There are `r nrow(data)` participants. By looking at the hitogram I ploted, we can see that the distribution of ages are very similar among males and females. The only difference is that the number of females among all ages is greater than the number of males.
 
 Issues in Existing Dataset: For variable "age_group", it is very confused to represent ages over 60 as "6,7,8". It's enough to use "6" instead of three numbers. Also, the way to covert continuous variables to categorical variables are not correct. For example, 10-15 mm eop size is indicated by 2, and 15-20 mm eop size is indicated by 3. So, for eop size equal to 15, it's a trouble to get corrosponding indicator.
 
@@ -50,23 +49,23 @@ Issues in Existing Dataset: For variable "age_group", it is very confused to rep
 # problem 2 - Visualization
 
 ```{r}
-water_wheel_data_2 = water_wheel_data %>%
+data_2 = data %>%
   mutate(age_group = factor(age_group, levels = c(1,2,3,4,5,6,7,8), labels = c("1-17", "18-30", "31-40", "41-50", "51-60", "60+", "60+", "60+"))) %>%
   drop_na() %>%
   filter(!(age_group == "1-17")) %>%
   group_by(age_group, sex) 
 
-p1 = ggplot(water_wheel_data_2, aes(x = fhp_size_mm,  fill = sex)) + geom_density(alpha = .6) + facet_grid(~age_group)
-water_wheel_data_2
+p1 = ggplot(data_2, aes(x = fhp_size_mm,  fill = sex)) + geom_density(alpha = .6) + facet_grid(~age_group)
+data_2
 
 
-water_wheel_data_3_1 = water_wheel_data %>%
+data_3_1 = data %>%
   mutate(age_group = factor(age_group, levels = c(1,2,3,4,5,6,7,8), labels = c("1-17", "18-30", "31-40", "41-50", "51-60", "60+", "60+", "60+"))) %>%
   filter(!(age_group == "1-17")) %>%
   group_by(age_group, sex) %>%
   summarise(total_people = n()) 
 
-water_wheel_data_3_2 = water_wheel_data %>%
+data_3_2 = data %>%
   mutate(age_group = factor(age_group, levels = c(1,2,3,4,5,6,7,8), labels = c("1-17", "18-30", "31-40", "41-50", "51-60", "60+", "60+", "60+"))) %>%
   filter(!(age_group == "1-17")) %>%
   group_by(age_group, sex) %>%
@@ -74,17 +73,17 @@ water_wheel_data_3_2 = water_wheel_data %>%
   summarise(enlarged_eop_people = n()) %>%
   select(enlarged_eop_people)
 
-water_wheel_data_3 = bind_cols(water_wheel_data_3_1, water_wheel_data_3_2) %>%
+data_3 = bind_cols(data_3_1, data_3_2) %>%
   mutate(rate = enlarged_eop_people/total_people)
 
-p2 = ggplot(water_wheel_data_3,aes(group = sex, x = age_group, y = rate)) + geom_line(aes(color = sex))
-water_wheel_data_3
+p2 = ggplot(data_3,aes(group = sex, x = age_group, y = rate)) + geom_line(aes(color = sex))
+data_3
 
 final_plot = grid.arrange(p1, p2, nrow = 2)
 final_plot
  
   
-water_wheel_data_4 = water_wheel_data %>%
+data_4 = data %>%
   mutate(age_group = factor(age_group, levels = c(1,2,3,4,5,6,7,8), labels = c("1-17", "18-30", "31-40", "41-50", "51-60", "60+", "60+", "60+"))) %>%
   filter(!(age_group == "1-17")) %>%
   select(age_group, sex, eop_size_mm, fhp_size_mm) %>% 
@@ -92,47 +91,47 @@ water_wheel_data_4 = water_wheel_data %>%
   geom_line() +
   facet_grid(vars(sex), vars(age_group)) + 
   viridis::scale_fill_viridis(discrete = TRUE)
-water_wheel_data_4
+data_4
 ```
 
 Comment: In each group, females have higher average FHP size than males. Males have larger EOP sizes compared to females. Males have higher rate of getting EEOP. I am interested in the question "what is the relationship between EOP size and FPH size for both males and females". 
 
 # problem 3 - Reproducing reported results
 ```{r}
-water_wheel_data_count = water_wheel_data %>%
+data_count = data %>%
   mutate(age_group = factor(age_group, levels = c(1,2,3,4,5,6,7,8), labels = c("1-17", "18-30", "31-40", "41-50", "51-60", "60+", "60+", "60+"))) %>%
   group_by(age_group) %>% 
   summarise(number_of_people = n())
 
-water_wheel_data_mean = water_wheel_data %>%
+data_mean = data %>%
   drop_na() %>%
   filter(age_group != 1) %>%
   group_by(sex) %>%
   select(fhp_size_mm) %>%
   mutate(average_fhp = mean(fhp_size_mm), sd_of_fhp = sd(fhp_size_mm)) %>%
   select(-fhp_size_mm)
-water_wheel_data_mean = unique(water_wheel_data_mean, fromLast = TRUE)
+data_mean = unique(data_mean, fromLast = TRUE)
 
 
-water_wheel_data_prevelence = water_wheel_data %>%
+data_prevelence = data %>%
   filter(!(eop_size == 0)) %>% 
   filter(! (eop_size == 1)) %>%
   filter(!(age_group == 1))
 
-number_of_diseased_people = nrow(water_wheel_data_prevelence)
+number_of_diseased_people = nrow(data_prevelence)
 
-total_people = nrow(water_wheel_data)
+total_people = nrow(data)
 
 prevalence = number_of_diseased_people/total_people
 prevalence
 
-water_wheel_data_FHP = water_wheel_data %>%
+data_FHP = data %>%
   filter(fhp_size_mm > 40) %>%
   filter(age_group %in% c(6, 7, 8))
-number_of_target = nrow(water_wheel_data_FHP)
+number_of_target = nrow(data_FHP)
 
 
-total_people = water_wheel_data %>%
+total_people = data %>%
   filter(age_group %in% c(6,7,8))
 total_people = nrow(total_people)
 
